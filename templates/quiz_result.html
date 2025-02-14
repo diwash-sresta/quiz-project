@@ -4,11 +4,21 @@
 
 {% block content %}
 <div class="container">
-    <h2>Quiz Result</h2>
-<p>Quiz: {{ quiz.title }}</p>
-<p>Your Score: {{ score }} / {{ quiz.questions.count }}</p>
-<a href="{% url 'quiz_list' %}">Take Another Quiz</a>
-
-    
+    <div class="card">
+        <div class="card-header">
+            <h2>Quiz Result</h2>
+        </div>
+        <div class="card-body">
+            <h3>{{ quiz.title }}</h3>
+            <div class="result-details">
+                <p class="lead">Your Score: {{ score }} out of {{ total_questions }}</p>
+                <p>Percentage: {{ percentage }}%</p>
+            </div>
+            <div class="mt-4">
+                <a href="{% url 'quiz_list' %}" class="btn btn-primary">Take Another Quiz</a>
+                <a href="{% url 'quiz_menu' %}" class="btn btn-secondary">Back to Menu</a>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

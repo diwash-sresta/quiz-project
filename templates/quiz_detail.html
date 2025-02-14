@@ -7,14 +7,14 @@
     <h2>{{ quiz.title }}</h2>
     <p>{{ quiz.description }}</p>
     
-    <form method="post">
+    <form method="post" action="{% url 'submit_quiz' quiz.id %}">
         {% csrf_token %}
         {% for question in quiz.questions.all %}
         <div class="mb-3">
             <label class="form-label">{{ question.text }}</label>
             {% for choice in question.choices.all %}
                 <div class="form-check">
-                    <input type="radio" class="form-check-input" name="{{ question.id }}" value="{{ choice.id }}">
+                    <input type="radio" class="form-check-input" name="{{ question.id }}" value="{{ choice.id }}" required>
                     <label class="form-check-label">{{ choice.text }}</label>
                 </div>
             {% endfor %}
@@ -25,13 +25,12 @@
     </form>
 
     <h3>Top Scores</h3>
-    <ul>
+    <ul class="list-group">
         {% for submission in top_scores %}
-    <li>{{ submission.user.username }}: {{ submission.score }} / {{ submission.quiz.questions.count }}</li>
-{% empty %}
-    <li>No scores yet.</li>
-{% endfor %}
-
+            <li class="list-group-item">{{ submission.user.username }}: {{ submission.score }} / {{ submission.quiz.questions.count }}</li>
+        {% empty %}
+            <li class="list-group-item">No scores yet.</li>
+        {% endfor %}
     </ul>
 </div>
 {% endblock %}

@@ -20,7 +20,6 @@ def quiz_detail(request, quiz_id):
     top_scores = UserSubmission.objects.filter(quiz=quiz).order_by('-score')[:5]  
     return render(request, 'quiz_detail.html', {'quiz': quiz, 'questions': questions, 'top_scores': top_scores})
 
-# 🟢 View to submit a quiz and calculate the score
 @login_required(login_url='/login/')
 def submit_quiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
@@ -28,17 +27,18 @@ def submit_quiz(request, quiz_id):
     if request.method == 'POST':
         score = 0
         total_questions = quiz.questions.count()
-        user_answers = []
+        user_answers = {}  # Changed to dictionary for better handling
 
+        # Collect answers and calculate score
         for question in quiz.questions.all():
             choice_id = request.POST.get(str(question.id))
             if choice_id:
                 choice = get_object_or_404(Choice, id=choice_id)
+                user_answers[question.id] = int(choice_id)  # Store in dictionary
                 if choice.is_correct:
                     score += 1
-                user_answers.append(int(choice_id))
 
-        # Save result automatically
+        # Create UserSubmission
         user_submission = UserSubmission.objects.create(
             user=request.user,
             quiz=quiz,
@@ -46,16 +46,32 @@ def submit_quiz(request, quiz_id):
             total_questions=total_questions
         )
 
+        # Also create a Result object for better tracking
+        Result.objects.create(
+            user=request.user,
+            quiz=quiz,
+            score=score,
+            total_questions=total_questions,
+            percentage=(score / total_questions * 100) if total_questions > 0 else 0
+        )
+
         return redirect('quiz_result', quiz_id=quiz.id, score=score)
 
     return redirect('quiz_list')
 
-# 🟢 View to display quiz results
 @login_required(login_url='/login/')
 def quiz_result(request, quiz_id, score):
     quiz = get_object_or_404(Quiz, id=quiz_id)
-    return render(request, 'quiz_result.html', {'quiz': quiz, 'score': score})
-
+    total_questions = quiz.questions.count()
+    percentage = (score / total_questions * 100) if total_questions > 0 else 0
+    
+    context = {
+        'quiz': quiz,
+        'score': score,
+        'total_questions': total_questions,
+        'percentage': round(percentage, 1)
+    }
+    return render(request, 'quiz_result.html', context)
 
 
 # 🟢 View for the quiz menu
