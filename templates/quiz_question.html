@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>{{ quiz.title }}</h2>
+    <h4>Question {{ question.id }} / {{ total_questions }}</h4>
+    <p>{{ question.text }}</p>
+
+    <form method="post" action="{% url 'submit_quiz' quiz.id question.id %}">
+        {% csrf_token %}
+        {% for choice in question.choices.all %}
+            <div>
+                <input type="radio" id="choice_{{ choice.id }}" name="choice" value="{{ choice.id }}" required>
+                <label for="choice_{{ choice.id }}">{{ choice.text }}</label>
+            </div>
+        {% endfor %}
+        <button type="submit">Next</button>
+    </form>
+
+    <div id="timer">Time left: <span id="countdown">{{ time_left }}</span> seconds</div>
+
+    <script>
+        let timeLeft = {{ time_left }};  // Set timer based on the remaining time
+        let timerDisplay = document.getElementById('countdown');
+
+        function updateTimer() {
+            if (timeLeft <= 0) {
+                document.forms[0].submit();  // Auto-submit when time is up
+            } else {
+                timerDisplay.innerText = timeLeft;
+                timeLeft--;
+            }
+        }
+
+        // Start the timer
+        setInterval(updateTimer, 1000);
+    </script>
+</div>
+{% endblock %}
