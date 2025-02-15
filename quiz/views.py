@@ -9,7 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import Quiz, Question, Choice, UserSubmission, Result
 from django.contrib import messages
-
+from django.db.models import Avg
 # Authentication Views
 def signup_view(request):
     if request.method == 'POST':
@@ -40,7 +40,10 @@ def quiz_menu_view(request):
 
     if request.user.is_authenticated:
         for quiz in quizzes:
-            user_results[quiz.id] = Result.objects.filter(quiz=quiz, user=request.user).latest('completion_time')
+            try:
+                user_results[quiz.id] = Result.objects.filter(quiz=quiz, user=request.user).latest('completion_time')
+            except Result.DoesNotExist:
+                user_results[quiz.id] = None  # No result exists for this quiz
 
     return render(request, 'quiz_menu.html', {'quizzes': quizzes, 'user_results': user_results})
 
@@ -48,6 +51,11 @@ def quiz_menu_view(request):
 @login_required(login_url='/login/')
 def start_quiz(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
+    
+    # Check if quiz has questions
+    if quiz.questions.count() == 0:
+        messages.warning(request, "This quiz has no questions.")
+        return redirect('quiz_menu')
     
     # Check if user has any ongoing quiz
     if any(key.startswith('quiz_') for key in request.session.keys()):
@@ -95,14 +103,13 @@ def quiz_question(request, quiz_id, question_id):
     context = {
         'quiz': quiz,
         'question': question,
-        'next_question_id': next_question.id if next_question else None,
+        'next_question_id': next_question.id if next_question else None,  # Handle case where next_question is None
         'time_left': int(time_left.total_seconds()),
         'current_score': current_score,
         'questions_answered': len(questions_answered),
         'total_questions': quiz.questions.count(),
     }
     return render(request, 'quiz_question.html', context)
-
 @login_required(login_url='/login/')
 def submit_answer(request, quiz_id, question_id):
     if request.method != 'POST':
@@ -122,7 +129,11 @@ def submit_answer(request, quiz_id, question_id):
         messages.warning(request, "Please select an answer.")
         return redirect('quiz_question', quiz_id=quiz_id, question_id=question_id)
     
-    choice = get_object_or_404(Choice, id=choice_id)
+    try:
+        choice = Choice.objects.get(id=choice_id, question=question)
+    except Choice.DoesNotExist:
+        messages.error(request, "Invalid choice selected.")
+        return redirect('quiz_question', quiz_id=quiz_id, question_id=question_id)
     
     # Record answer and update score
     questions_answered = request.session.get(f'quiz_{quiz_id}_questions_answered', [])

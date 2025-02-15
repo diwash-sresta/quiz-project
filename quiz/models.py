@@ -79,11 +79,10 @@ class Choice(models.Model):
 class UserSubmission(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, null=True, blank=True)  # Make nullable
-    selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE, null=False, blank=False, default="")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, null=True, blank=True)
+    selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE, null=False, blank=False)  # Remove default
     is_correct = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
 
     class Meta:
         ordering = ['created_at']
@@ -97,12 +96,12 @@ class UserSubmission(models.Model):
         super().save(*args, **kwargs)
 
 class Result(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)  # Provide a default value
+    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Remove default
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
     score = models.IntegerField(default=0)
     completion_time = models.DateTimeField(default=timezone.now)
-    time_taken = models.DurationField(null=True, blank=True, default=None)
-    passed = models.BooleanField(null=True, blank=True, default=None)
+    time_taken = models.DurationField(null=True, blank=True)
+    passed = models.BooleanField(null=True, blank=True)
 
     class Meta:
         ordering = ['-completion_time']
