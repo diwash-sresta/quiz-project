@@ -111,6 +111,7 @@ def quiz_question(request, quiz_id, question_id):
     }
     return render(request, 'quiz_question.html', context)
 @login_required(login_url='/login/')
+@login_required(login_url='/login/')
 def submit_answer(request, quiz_id, question_id):
     if request.method != 'POST':
         return redirect('quiz_question', quiz_id=quiz_id, question_id=question_id)
@@ -135,24 +136,37 @@ def submit_answer(request, quiz_id, question_id):
         messages.error(request, "Invalid choice selected.")
         return redirect('quiz_question', quiz_id=quiz_id, question_id=question_id)
     
-    # Record answer and update score
-    questions_answered = request.session.get(f'quiz_{quiz_id}_questions_answered', [])
-    if question_id not in questions_answered:
-        current_score = request.session.get(f'quiz_{quiz_id}_score', 0)
-        if choice.is_correct:
-            current_score += 1
-            request.session[f'quiz_{quiz_id}_score'] = current_score
-        
-        questions_answered.append(question_id)
-        request.session[f'quiz_{quiz_id}_questions_answered'] = questions_answered
-        
-        UserSubmission.objects.create(
-            user=request.user,
-            quiz=quiz,
-            question=question,
-            selected_choice=choice,
-            is_correct=choice.is_correct
-        )
+    # Check if the user has already submitted an answer for this question
+    existing_submission = UserSubmission.objects.filter(
+        user=request.user,
+        quiz=quiz,
+        question=question
+    ).first()
+    
+    if existing_submission:
+        # Update the existing submission
+        existing_submission.selected_choice = choice
+        existing_submission.is_correct = choice.is_correct
+        existing_submission.save()
+    else:
+        # Record answer and update score
+        questions_answered = request.session.get(f'quiz_{quiz_id}_questions_answered', [])
+        if question_id not in questions_answered:
+            current_score = request.session.get(f'quiz_{quiz_id}_score', 0)
+            if choice.is_correct:
+                current_score += 1
+                request.session[f'quiz_{quiz_id}_score'] = current_score
+            
+            questions_answered.append(question_id)
+            request.session[f'quiz_{quiz_id}_questions_answered'] = questions_answered
+            
+            UserSubmission.objects.create(
+                user=request.user,
+                quiz=quiz,
+                question=question,
+                selected_choice=choice,
+                is_correct=choice.is_correct
+            )
     
     # Determine next question or finish quiz
     next_question = quiz.questions.filter(id__gt=question.id).first()

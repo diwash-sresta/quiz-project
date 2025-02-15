@@ -6,7 +6,7 @@
     <h4>Question {{ question.id }} / {{ total_questions }}</h4>
     <p>{{ question.text }}</p>
 
-    <form method="post" action="{% url 'submit_quiz' quiz.id question.id %}">
+    <form method="post" action="{% url 'submit_answer' quiz.id question.id %}">
         {% csrf_token %}
         {% for choice in question.choices.all %}
             <div>
