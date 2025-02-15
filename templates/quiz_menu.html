@@ -50,19 +50,23 @@
 
                         <!-- User's History with this Quiz -->
                         {% if user.is_authenticated %}
-                            {% with user_results=quiz.result_set.filter.user=user %}
-                                {% if user_results.exists %}
-                                    {% with latest_result=user_results.latest %}
-                                    <div class="small mb-3">
-                                        <div class="text-{% if latest_result.passed %}success{% else %}danger{% endif %}">
-                                            Last Attempt: {{ latest_result.score }}/{{ quiz.get_total_questions }}
-                                            ({{ latest_result.calculate_percentage|floatformat:1 }}%)
-                                        </div>
-                                        <div class="text-muted">
-                                            {{ latest_result.completion_time|date:"M d, Y" }}
-                                        </div>
-                                    </div>
-                                    {% endwith %}
+                            {% with user_results=quiz.result_set.all %}
+                                {% if user_results %}
+                                    {% for result in user_results %}
+                                        {% if result.user == user %}
+                                            {% with latest_result=result %}
+                                            <div class="small mb-3">
+                                                <div class="text-{% if latest_result.passed %}success{% else %}danger{% endif %}">
+                                                    Last Attempt: {{ latest_result.score }}/{{ quiz.get_total_questions }}
+                                                    ({{ latest_result.calculate_percentage|floatformat:1 }}%)
+                                                </div>
+                                                <div class="text-muted">
+                                                    {{ latest_result.completion_time|date:"M d, Y" }}
+                                                </div>
+                                            </div>
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endfor %}
                                 {% endif %}
                             {% endwith %}
                         {% endif %}
@@ -70,7 +74,7 @@
                         <!-- Action Buttons -->
                         <div class="d-grid gap-2">
                             <a href="{% url 'start_quiz' quiz.id %}" class="btn btn-primary">
-                                {% if user.is_authenticated and quiz.result_set.filter.user=user %}
+                                {% if user.is_authenticated and quiz.result_set.all %}
                                     Retake Quiz
                                 {% else %}
                                     Start Quiz
@@ -91,54 +95,5 @@
             </div>
         {% endfor %}
     </div>
-
-    <!-- Achievements Section (for authenticated users) -->
-    {% if user.is_authenticated and user_results %}
-        <div class="row mt-4">
-            <div class="col-12">
-                <h3 class="mb-3">Your Achievements</h3>
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <div class="card bg-light">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Quizzes Taken</h5>
-                                <p class="card-text display-6">{{ user_results.count }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-light">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Avg Score</h5>
-                                <p class="card-text display-6">
-                                    {{ user_results.aggregate.Avg.score.score__avg|default:0|floatformat:1 }}%
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-light">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Passed</h5>
-                                <p class="card-text display-6">
-                                    {{ user_results.filter.passed=True.count }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-light">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">Best Score</h5>
-                                <p class="card-text display-6">
-                                    {{ user_results.aggregate.Max.score.score__max|default:0 }}%
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
 </div>
 {% endblock %}

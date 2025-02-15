@@ -4,7 +4,7 @@ from . import views
 urlpatterns = [
     # Main Quiz Navigation
     path('', views.quiz_menu_view, name='quiz_menu'),
-    path('list/', views.quiz_list_view, name='quiz_list'),
+    path('list/', views.quiz_menu_view, name='quiz_menu'),
     
     # Quiz Taking Flow
     path('<int:quiz_id>/start/', views.start_quiz, name='start_quiz'),

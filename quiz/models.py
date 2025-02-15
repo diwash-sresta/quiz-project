@@ -1,16 +1,18 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 
 class Quiz(models.Model):
     title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     time_limit = models.IntegerField(
         null=True, 
         blank=True,
         help_text="Time limit in seconds. Leave blank for no limit.",
-        validators=[MinValueValidator(60)]  # Minimum 1 minute
+        validators=[MinValueValidator(60)],  # Minimum 1 minute
+        default=None  # Default set to None
     )
     passing_score = models.DecimalField(
         max_digits=5, 
@@ -18,7 +20,8 @@ class Quiz(models.Model):
         null=True,
         blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(100)],
-        help_text="Passing score percentage. Leave blank if no passing score is required."
+        help_text="Passing score percentage. Leave blank if no passing score is required.",
+        default=None  # Default set to None
     )
     is_active = models.BooleanField(default=True)
 
@@ -38,7 +41,8 @@ class Question(models.Model):
     order = models.IntegerField(default=0)
     explanation = models.TextField(
         blank=True,
-        help_text="Explanation to show after the question is answered"
+        help_text="Explanation to show after the question is answered",
+        default=""  # Default to empty string if no explanation provided
     )
 
     class Meta:
@@ -56,7 +60,8 @@ class Choice(models.Model):
     is_correct = models.BooleanField(default=False)
     explanation = models.TextField(
         blank=True,
-        help_text="Explanation for why this choice is correct/incorrect"
+        help_text="Explanation for why this choice is correct/incorrect",
+        default=""  # Default to empty string if no explanation provided
     )
 
     class Meta:
@@ -74,44 +79,39 @@ class Choice(models.Model):
 class UserSubmission(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
-    is_correct = models.BooleanField()
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, null=True, blank=True)  # Make nullable
+    selected_choice = models.ForeignKey(Choice, on_delete=models.CASCADE, null=False, blank=False, default="")
+    is_correct = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
 
     class Meta:
         ordering = ['created_at']
-        unique_together = ['user', 'quiz', 'question']  # Prevent multiple submissions for same question
+        unique_together = ['user', 'quiz', 'question']
 
     def __str__(self):
         return f"{self.user.username} - {self.quiz.title} - Q{self.question.id}"
 
     def save(self, *args, **kwargs):
-        # Automatically set is_correct based on selected choice
         self.is_correct = self.selected_choice.is_correct
         super().save(*args, **kwargs)
 
 class Result(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)  # Provide a default value
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
-    score = models.IntegerField()
-    completion_time = models.DateTimeField()
-    time_taken = models.DurationField(
-        null=True,
-        blank=True,
-        help_text="Time taken to complete the quiz"
-    )
-    passed = models.BooleanField(null=True, blank=True)
+    score = models.IntegerField(default=0)
+    completion_time = models.DateTimeField(default=timezone.now)
+    time_taken = models.DurationField(null=True, blank=True, default=None)
+    passed = models.BooleanField(null=True, blank=True, default=None)
 
     class Meta:
         ordering = ['-completion_time']
-        unique_together = ['user', 'quiz', 'completion_time']  # Allow multiple attempts but not at same time
+        unique_together = ['user', 'quiz', 'completion_time']
 
     def __str__(self):
         return f"{self.user.username} - {self.quiz.title} ({self.score}/{self.quiz.get_total_questions()})"
 
     def save(self, *args, **kwargs):
-        # Calculate if passed based on quiz passing_score
         if self.quiz.passing_score is not None:
             total_questions = self.quiz.get_total_questions()
             if total_questions > 0:

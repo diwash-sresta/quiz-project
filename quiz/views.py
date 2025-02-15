@@ -24,33 +24,25 @@ def signup_view(request):
     return render(request, 'signup.html', {'form': form})
 
 class CustomLoginView(LoginView):
-    template_name = 'login.html'
+    template_name = 'registration/login.html'
     def get_success_url(self):
         return resolve_url('quiz_menu')
 
 class CustomLogoutView(LogoutView):
     next_page = 'login'
 
-# Quiz List and Menu Views
+from django.shortcuts import render
+from .models import Quiz, Result
+
 def quiz_menu_view(request):
     quizzes = Quiz.objects.all()
-    user_results = None
-    if request.user.is_authenticated:
-        user_results = Result.objects.filter(user=request.user)
-    return render(request, "quiz_menu.html", {
-        "quizzes": quizzes,
-        "user_results": user_results
-    })
+    user_results = {}
 
-def quiz_list_view(request):
-    quizzes = Quiz.objects.all().order_by('-created_at')
-    user_results = None
     if request.user.is_authenticated:
-        user_results = Result.objects.filter(user=request.user)
-    return render(request, 'quiz/quiz_list.html', {
-        'quizzes': quizzes,
-        'user_results': user_results
-    })
+        for quiz in quizzes:
+            user_results[quiz.id] = Result.objects.filter(quiz=quiz, user=request.user).latest('completion_time')
+
+    return render(request, 'quiz_menu.html', {'quizzes': quizzes, 'user_results': user_results})
 
 # Quiz Taking Views
 @login_required(login_url='/login/')
