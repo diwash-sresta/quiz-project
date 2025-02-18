@@ -1,0 +1,16 @@
+:root {
+    --bs-primary: #6f42c1;
+    /* Example: Purple */
+    --bs-primary-hover: #5a32a3;
+    /* Darker shade for hover */
+}
+
+.btn-primary {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--bs-primary-hover);
+    border-color: var(--bs-primary-hover);
+}

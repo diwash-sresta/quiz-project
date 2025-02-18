@@ -1,39 +1,93 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h2>{{ quiz.title }}</h2>
-    <h4>Question {{ question.id }} / {{ total_questions }}</h4>
-    <p>{{ question.text }}</p>
+<div class="container py-5">
+  <!-- Question Header -->
+  <div class="text-center mb-5">
+    <h2 class="mb-3 fw-bold" style="color: var(--primary-color);">
+      {{ quiz.title }}
+    </h2>
+    
+    <p class="lead text-muted">
+      {{ question.text }}
+    </p>
+  </div>
 
-    <form method="post" action="{% url 'submit_answer' quiz.id question.id %}">
-        {% csrf_token %}
-        {% for choice in question.choices.all %}
-            <div>
-                <input type="radio" id="choice_{{ choice.id }}" name="choice" value="{{ choice.id }}" required>
-                <label for="choice_{{ choice.id }}">{{ choice.text }}</label>
-            </div>
-        {% endfor %}
-        <button type="submit">Next</button>
-    </form>
+  <!-- Answer Form -->
+  <form method="post" action="{% url 'submit_answer' quiz.id question.id %}">
+    {% csrf_token %}
+    <div class="row justify-content-center g-3">
+      {% for choice in question.choices.all %}
+        <div class="col-md-6">
+          <input type="radio" class="btn-check" id="choice_{{ choice.id }}" name="choice" value="{{ choice.id }}" required>
+          <label class="btn btn-outline-primary w-100 p-3 text-start animate-fade-in" for="choice_{{ choice.id }}">
+            <i class="bi bi-circle me-2"></i>
+            {{ choice.text }}
+          </label>
+        </div>
+      {% endfor %}
+    </div>
 
-    <div id="timer">Time left: <span id="countdown">{{ time_left }}</span> seconds</div>
+    <!-- Submit Button -->
+    <div class="text-center mt-4">
+      <button type="submit" class="btn btn-primary btn-lg px-5 py-2 fw-medium">
+        <i class="bi bi-send-check me-2"></i> Lock Answer
+      </button>
+    </div>
+  </form>
 
-    <script>
-        let timeLeft = {{ time_left }};  // Set timer based on the remaining time
-        let timerDisplay = document.getElementById('countdown');
-
-        function updateTimer() {
-            if (timeLeft <= 0) {
-                document.forms[0].submit();  // Auto-submit when time is up
-            } else {
-                timerDisplay.innerText = timeLeft;
-                timeLeft--;
-            }
-        }
-
-        // Start the timer
-        setInterval(updateTimer, 1000);
-    </script>
+  <!-- Timer Display -->
+  <div class="mt-4 text-center">
+    <div id="timer" class="d-inline-block p-3 rounded-3" style="background: linear-gradient(to right, var(--primary-color), var(--secondary-color)); color: #fff;">
+      <i class="bi bi-clock me-2"></i>
+      Time left: <span id="countdown">{{ time_left }}</span> seconds
+    </div>
+  </div>
 </div>
+
+<!-- Timer Script -->
+<script>
+  let timeLeft = {{ time_left }};
+  const timerDisplay = document.getElementById('countdown');
+
+  function updateTimer() {
+      if (timeLeft <= 0) {
+          document.forms[0].submit();
+      } else {
+          timerDisplay.innerText = timeLeft;
+          timeLeft--;
+      }
+  }
+  setInterval(updateTimer, 1000);
+</script>
+
+<!-- Custom Styles -->
+<style>
+  .btn-outline-primary {
+    border: 2px solid var(--primary-color);
+    transition: all 0.3s ease;
+  }
+
+  .btn-check:checked + .btn-outline-primary,
+  .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-check:checked + .btn-outline-primary i {
+    color: #fff;
+  }
+
+  .btn-outline-primary i {
+    color: var(--primary-color);
+    transition: color 0.3s ease;
+  }
+
+  #timer {
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+</style>
 {% endblock %}

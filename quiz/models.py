@@ -42,7 +42,14 @@ class Question(models.Model):
     explanation = models.TextField(
         blank=True,
         help_text="Explanation to show after the question is answered",
-        default=""  # Default to empty string if no explanation provided
+        default=""
+    )
+    time_limit = models.IntegerField(
+        null=True, 
+        blank=True,
+        help_text="Time limit in seconds for this question. Leave blank to use quiz default.",
+        validators=[MinValueValidator(10)],  # Minimum 10 seconds
+        default=60  # Default 60 seconds
     )
 
     class Meta:
@@ -54,6 +61,15 @@ class Question(models.Model):
     def get_correct_choice(self):
         return self.choices.filter(is_correct=True).first()
 
+    def get_time_limit(self):
+        """Returns the effective time limit for this question"""
+        if self.time_limit is not None:
+            return self.time_limit
+        if self.quiz.time_limit is not None:
+            # Distribute quiz time evenly among questions
+            return self.quiz.time_limit // self.quiz.get_total_questions()
+        return 60  # Default 60 seconds if no time limit is set
+    
 class Choice(models.Model):
     question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)
     text = models.CharField(max_length=255)

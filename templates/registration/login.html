@@ -1,15 +1,43 @@
 {% extends "base.html" %}
+{% load widget_tweaks %}
+{% load static %}
 
-{% block title %}Log In - Quiz App{% endblock %}
+{% block title %}Log In - QuizMaster{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2 class="mb-4">Log In</h2>
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+  <div class="card shadow-sm p-4" style="width: 100%; max-width: 400px; border-radius: 12px;">
+    
+    <!-- QuizMaster Logo & Title -->
+    <div class="text-center mb-3">
+        <h3 class="mt-2 fw-bold text-primary">
+            <i class="bi bi-mortarboard-fill me-2 fs-4"></i>QuizMaster</h3>
+      <p class="text-muted">Log in to continue your quiz journey!</p>
+    </div>
+
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        Invalid username or password. Please try again.
+      </div>
+    {% endif %}
+
+    <!-- Log In Form -->
     <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Log In</button>
+      {% csrf_token %}
+      <div class="mb-3">
+        {{ form.username.label_tag }}
+        {{ form.username|add_class:"form-control" }}
+      </div>
+      <div class="mb-3">
+        {{ form.password.label_tag }}
+        {{ form.password|add_class:"form-control" }}
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Log In</button>
     </form>
-    <p class="mt-3">Don't have an account? <a href="{% url 'signup' %}">Sign Up</a></p>
+
+    <p class="mt-3 text-center">
+      Don't have an account? <a href="{% url 'signup' %}">Sign Up</a>
+    </p>
+  </div>
 </div>
 {% endblock %}
